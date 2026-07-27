@@ -63,8 +63,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (output JSON)
+        # npm audit exits non-zero when vulnerabilities are found — write JSON and continue so we can parse and fail on chosen severities
+        run: npm audit --json > audit.json || true
+
+      - name: Check audit results (fail on high/critical)
+        run: node ./scripts/check-audit.js audit.json
 
   deploy:
     name: Deploy to Vercel Production
